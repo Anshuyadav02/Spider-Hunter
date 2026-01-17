@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Hunt Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            overflow: hidden;
+            cursor: none;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+        }
+
+        /* Stars Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes shooting-star {
+            0% {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-300px) translateY(300px);
+                opacity: 0;
+            }
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.5);
+            animation: shooting-star 3s linear infinite;
+        }
+
+        /* Game UI */
+        .game-ui {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            text-align: center;
+        }
+
+        .score-board {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 15px 40px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .score {
+            color: #ff6b6b;
+            font-size: 32px;
+        }
+
+        /* Intro Message */
+        .intro-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            text-align: center;
+            color: white;
+            animation: fade-out-intro 3s ease-out forwards;
+        }
+
+        .intro-message h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+        }
+
+        .intro-message p {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        @keyframes fade-out-intro {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        /* Spider Body */
+        .spider {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 10000;
+            transition: transform 0.1s ease;
+        }
+
+        .spider-body {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #8b0000);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.8),
+                        inset -2px -2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .spider-head {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, #ff8787, #6b0000);
+            border-radius: 50%;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.6);
+        }
+
+        .eye {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            top: 4px;
+            box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+        }
+
+        .eye-left {
+            left: 3px;
+        }
+
+        .eye-right {
+            right: 3px;
+        }
+
+        .leg {
+            position: absolute;
+            width: 2px;
+            height: 25px;
+            background: linear-gradient(to bottom, #ff6b6b, #4a0000);
+            transform-origin: top center;
+            box-shadow: 0 0 3px rgba(255, 107, 107, 0.5);
+        }
+
+        .leg-1 {
+            top: 2px;
+            left: -15px;
+            transform: rotate(-45deg);
+            animation: leg-move-1 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-2 {
+            top: 8px;
+            left: -18px;
+            transform: rotate(-60deg);
+            animation: leg-move-2 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-3 {
+            top: 14px;
+            left: -18px;
+            transform: rotate(-75deg);
+            animation: leg-move-1 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-4 {
+            top: 20px;
+            left: -15px;
+            transform: rotate(-90deg);
+            animation: leg-move-2 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-5 {
+            top: 2px;
+            right: -15px;
+            transform: rotate(45deg);
+            animation: leg-move-2 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-6 {
+            top: 8px;
+            right: -18px;
+            transform: rotate(60deg);
+            animation: leg-move-1 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-7 {
+            top: 14px;
+            right: -18px;
+            transform: rotate(75deg);
+            animation: leg-move-2 0.5s ease-in-out infinite alternate;
+        }
+
+        .leg-8 {
+            top: 20px;
+            right: -15px;
+            transform: rotate(90deg);
+            animation: leg-move-1 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes leg-move-1 {
+            0% { transform: rotate(var(--start-angle)) scale(1); }
+            100% { transform: rotate(calc(var(--start-angle) + 10deg)) scale(1.1); }
+        }
+
+        @keyframes leg-move-2 {
+            0% { transform: rotate(var(--start-angle)) scale(1); }
+            100% { transform: rotate(calc(var(--start-angle) - 10deg)) scale(1.1); }
+        }
+
+        /* Insects/Bugs */
+        .insect {
+            position: fixed;
+            font-size: 30px;
+            z-index: 50;
+            cursor: pointer;
+            animation: fly 5s linear infinite;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+
+        @keyframes fly {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            50% {
+                transform: translateY(0) rotate(0deg);
+            }
+            75% {
+                transform: translateY(-20px) rotate(-5deg);
+            }
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        /* Web Trail */
+        .web-dot {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            animation: fade-out 1s ease-out forwards;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes fade-out {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        /* Eating Animation */
+        @keyframes eat-effect {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(2);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .eat-effect {
+            animation: eat-effect 0.5s ease-out;
+        }
+
+        /* Game Over Screen */
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fade-in-game-over 0.5s ease-out;
+            cursor: auto !important;
+        }
+
+        .game-over * {
+            cursor: auto !important;
+        }
+
+        @keyframes fade-in-game-over {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .game-over h1 {
+            font-size: 5rem;
+            color: #ff4444;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.8);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .game-over p {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .game-over .final-score {
+            font-size: 3rem;
+            color: #4ade80;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.8);
+        }
+
+        .restart-btn {
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer !important;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.8);
+            cursor: pointer !important;
+        }
+
+        /* Bomb Style */
+        .bomb {
+            position: fixed;
+            font-size: 35px;
+            z-index: 50;
+            cursor: pointer;
+            animation: bomb-shake 0.5s infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+        }
+
+        @keyframes bomb-shake {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        /* Explosion Effect */
+        .explosion {
+            position: fixed;
+            font-size: 100px;
+            z-index: 10000;
+            animation: explode 1s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .point-popup {
+            position: fixed;
+            color: #4ade80;
+            font-size: 30px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: point-float 1s ease-out forwards;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);
+        }
+
+        @keyframes point-float {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        * {
+            cursor: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .intro-message h1 {
+                font-size: 2.5rem;
+            }
+            .intro-message p {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Stars Background -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Game UI -->
+    <div class="game-ui">
+        <div class="score-board">
+            Score: <span class="score" id="score">0</span>
+        </div>
+    </div>
+
+    <!-- Intro Message -->
+    <div class="intro-message" id="introMessage">
+        <h1>🕷️ Spider Hunt</h1>
+        <p>Catch the insects to earn points!</p>
+    </div>
+
+    <!-- Spider Cursor -->
+    <div class="spider" id="spider">
+        <div class="spider-head">
+            <div class="eye eye-left"></div>
+            <div class="eye eye-right"></div>
+        </div>
+        <div class="spider-body"></div>
+        
+        <div class="leg leg-1" style="--start-angle: -45deg;"></div>
+        <div class="leg leg-2" style="--start-angle: -60deg;"></div>
+        <div class="leg leg-3" style="--start-angle: -75deg;"></div>
+        <div class="leg leg-4" style="--start-angle: -90deg;"></div>
+        <div class="leg leg-5" style="--start-angle: 45deg;"></div>
+        <div class="leg leg-6" style="--start-angle: 60deg;"></div>
+        <div class="leg leg-7" style="--start-angle: 75deg;"></div>
+        <div class="leg leg-8" style="--start-angle: 90deg;"></div>
+    </div>
+
+    <script>
+        const spider = document.getElementById('spider');
+        const starsContainer = document.getElementById('stars');
+        const scoreElement = document.getElementById('score');
+        let mouseX = 0;
+        let mouseY = 0;
+        let spiderX = 0;
+        let spiderY = 0;
+        let angle = 0;
+        let score = 0;
+
+        const insects = ['🦟', '🪰', '🐝', '🦗', '🐛', '🐞', '🪲'];
+        const bombs = ['💣', '💥'];
+        let gameOver = false;
+
+        // Create galaxy stars
+        function createStars() {
+            const starCount = 200;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+
+            for (let i = 0; i < 3; i++) {
+                const shootingStar = document.createElement('div');
+                shootingStar.className = 'shooting-star';
+                shootingStar.style.left = Math.random() * 100 + '%';
+                shootingStar.style.top = Math.random() * 50 + '%';
+                shootingStar.style.animationDelay = Math.random() * 5 + 's';
+                shootingStar.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                starsContainer.appendChild(shootingStar);
+            }
+        }
+
+        createStars();
+
+        // Create insects
+        function spawnInsect() {
+            if (gameOver) return;
+
+            const isInsect = Math.random() > 0.3; // 70% chance for insect, 30% for bomb
+            const element = document.createElement('div');
+            
+            if (isInsect) {
+                element.className = 'insect';
+                element.textContent = insects[Math.floor(Math.random() * insects.length)];
+                element.dataset.type = 'insect';
+            } else {
+                element.className = 'bomb';
+                element.textContent = bombs[Math.floor(Math.random() * bombs.length)];
+                element.dataset.type = 'bomb';
+            }
+            
+            element.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            element.style.top = Math.random() * (window.innerHeight - 50) + 'px';
+            document.body.appendChild(element);
+
+            // Remove after 5 seconds if not caught
+            setTimeout(() => {
+                if (element.parentElement) {
+                    element.remove();
+                }
+            }, 5000);
+
+            // Check collision
+            checkCollision(element);
+        }
+
+        // Check if spider catches insect or bomb
+        function checkCollision(element) {
+            const interval = setInterval(() => {
+                if (!element.parentElement || gameOver) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                const elementRect = element.getBoundingClientRect();
+                const spiderRect = {
+                    left: spiderX - 15,
+                    right: spiderX + 15,
+                    top: spiderY - 15,
+                    bottom: spiderY + 15
+                };
+
+                if (
+                    spiderRect.left < elementRect.right &&
+                    spiderRect.right > elementRect.left &&
+                    spiderRect.top < elementRect.bottom &&
+                    spiderRect.bottom > elementRect.top
+                ) {
+                    if (element.dataset.type === 'insect') {
+                        // Caught insect!
+                        element.classList.add('eat-effect');
+                        score += 10;
+                        scoreElement.textContent = score;
+                        showPointPopup(elementRect.left, elementRect.top);
+                        setTimeout(() => element.remove(), 500);
+                    } else {
+                        // Hit bomb!
+                        showExplosion(elementRect.left, elementRect.top);
+                        element.remove();
+                        endGame();
+                    }
+                    clearInterval(interval);
+                }
+            }, 50);
+        }
+
+        // Show explosion animation
+        function showExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.textContent = '💥';
+            explosion.style.left = x + 'px';
+            explosion.style.top = y + 'px';
+            document.body.appendChild(explosion);
+            
+            setTimeout(() => explosion.remove(), 1000);
+        }
+
+        // End game
+        function endGame() {
+            gameOver = true;
+            
+            // Hide spider cursor
+            spider.style.display = 'none';
+            
+            // Restore normal cursor
+            document.body.style.cursor = 'auto';
+            
+            // Show game over screen
+            const gameOverScreen = document.createElement('div');
+            gameOverScreen.className = 'game-over';
+            gameOverScreen.innerHTML = `
+                <h1>💣 GAME OVER! 💥</h1>
+                <p>You hit a bomb!</p>
+                <div class="final-score">Final Score: ${score}</div>
+                <button class="restart-btn" onclick="location.reload()">Play Again</button>
+            `;
+            document.body.appendChild(gameOverScreen);
+        }
+
+        // Show point animation
+        function showPointPopup(x, y) {
+            const popup = document.createElement('div');
+            popup.className = 'point-popup';
+            popup.textContent = '+10';
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        // Spawn insects regularly
+        setInterval(spawnInsect, 2000);
+        spawnInsect(); // First one immediately
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            createWebDot(mouseX, mouseY);
+        });
+
+        function animateSpider() {
+            if (gameOver) return;
+            
+            spiderX += (mouseX - spiderX) * 0.15;
+            spiderY += (mouseY - spiderY) * 0.15;
+
+            const dx = mouseX - spiderX;
+            const dy = mouseY - spiderY;
+            angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+            spider.style.left = spiderX + 'px';
+            spider.style.top = spiderY + 'px';
+            spider.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg)`;
+
+            requestAnimationFrame(animateSpider);
+        }
+
+        function createWebDot(x, y) {
+            const dot = document.createElement('div');
+            dot.className = 'web-dot';
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            document.body.appendChild(dot);
+
+            setTimeout(() => dot.remove(), 1000);
+        }
+
+        animateSpider();
+
+        document.addEventListener('click', () => {
+            spider.style.transition = 'transform 0.2s ease';
+            spider.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg) scale(1.5)`;
+            
+            setTimeout(() => {
+                spider.style.transition = 'transform 0.1s ease';
+                spider.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg) scale(1)`;
+            }, 200);
+        });
+    </script>
+
+</body>
+</html>
